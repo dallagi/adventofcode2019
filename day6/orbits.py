@@ -5,7 +5,7 @@ class PlanetsTree:
         self.orbited_by = orbited_by or []
 
     @classmethod
-    def from_orbits(cls, orbits, name):
+    def from_orbits(cls, orbits, name='COM'):
         planet = cls(name)
         for orbit in orbits:
             target, orbiter = orbit.strip().split(')')
@@ -14,20 +14,39 @@ class PlanetsTree:
 
         return planet
 
-def total_number_of_orbits(planet_tree, orbits, level=1):
-    if planet_tree is None:
-        return 0
+    def total_number_of_orbits(self, level=1):
+        return sum(level + space_object.total_number_of_orbits(level+1)
+                for space_object in self.orbited_by)
 
-    return sum(level + total_number_of_orbits(space_object, orbits, level+1)
-            for space_object in planet_tree.orbited_by)
+    def minimum_number_of_orbital_transfers(self, start, end):
+        nearest_common_parent = self._nearest_common_parent(start, end)
+        
+        return nearest_common_parent._child_depth(start) + nearest_common_parent._child_depth(end)
 
-def minimum_number_of_orbital_transfers(planet_tree, orbits, level=1):
-    nearest_common_parent = 
+    def _nearest_common_parent(self, a, b):
+        # very unefficient approach, but it works ¯\_(ツ)_/¯
+        for space_object in self.orbited_by:
+            if space_object._is_orbited_by(a) and space_object._is_orbited_by(b):
+                return space_object._nearest_common_parent(a, b)
+        return self
+
+    def _is_orbited_by(self, target):
+        if not self.orbited_by:
+            return False
+        if target in [space_object.name for space_object in self.orbited_by]:
+            return True
+        return any(space_object._is_orbited_by(target) for space_object in self.orbited_by)
+
+    def _child_depth(self, target, accumulator=0):
+        if not self.orbited_by:
+            return 0
+        if target in [space_object.name for space_object in self.orbited_by]:
+            return accumulator
+        return sum(space_object._child_depth(target, accumulator + 1) for space_object in self.orbited_by)
 
 if __name__ == '__main__':
     input_orbits = open('input').readlines()
-    planets_tree = build_planets_tree(input_orbits, 'COM')
+    planets_tree = PlanetsTree.from_orbits(input_orbits)
     
-    orbits_count = total_number_of_orbits(planets_tree, input_orbits)
-
-    print(f"Total number of orbits: {orbits_count}")
+    print(f"Total number of orbits: {planets_tree.total_number_of_orbits()}")
+    print(f"Minimum number of orbital transfers: {planets_tree.minimum_number_of_orbital_transfers('YOU', 'SAN')}")
