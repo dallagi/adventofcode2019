@@ -20,7 +20,9 @@ def total_number_of_orbits(planet_tree, orbits, level=1):
 
     return sum(level + total_number_of_orbits(space_object, orbits, level+1)
             for space_object in planet_tree.orbited_by)
-    
+
+def minimum_number_of_orbital_transfers(planet_tree, orbits, level=1):
+    nearest_common_parent = 
 
 if __name__ == '__main__':
     input_orbits = open('input').readlines()

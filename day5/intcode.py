@@ -35,37 +35,37 @@ class IntCodeVM:
 
     def parameters(self, count):
         params = self.numbers[self.index+1:self.index+count+1]
-        res = [ self.get_param(param, mode) 
-                for param, mode in zip(params, self.parameter_modes(count)) ]
+        res = [ self._get_param(param, mode) 
+                for param, mode in zip(params, self._parameter_modes(count)) ]
         return res
 
-    def get_param(self, param, mode):
+    def _get_param(self, param, mode):
         if mode == 1:
             return param
         return self.numbers[param]
 
-    def parameter_modes(self, count):
+    def _parameter_modes(self, count):
         instruction_code = self.numbers[self.index]
         return [int(mode) for mode in str(instruction_code)[:-2].zfill(count)[::-1]]
 
     def _op_add(self):
         a, b = self.parameters(2)
-        result = self.numbers[self.index + 3]
+        result_idx = self.numbers[self.index + 3]
         
-        self.numbers[result] = a + b
+        self.numbers[result_idx] = a + b
         self.index += 4
 
     def _op_multiply(self):
         a, b = self.parameters(2)
-        result = self.numbers[self.index + 3]
+        result_idx = self.numbers[self.index + 3]
         
-        self.numbers[result] = a * b
+        self.numbers[result_idx] = a * b
         self.index += 4
 
     def _op_input(self):
-        result = self.numbers[self.index + 1]
+        result_idx = self.numbers[self.index + 1]
         given_input = int(input("> "))
-        self.numbers[result] = given_input
+        self.numbers[result_idx] = given_input
         self.index += 2
 
     def _op_output(self):
