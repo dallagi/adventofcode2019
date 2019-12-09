@@ -1,34 +1,47 @@
+import asyncio
+from itertools import permutations
 
 class IntCodeVM:
     EXIT_OPCODE = 99
 
-    def __init__(self, program, inputs=None):
+    def __init__(self, program, initial_inputs=None):
         self.program = program[::]
         self.index = 0
-        self.inputs = iter(inputs)
+        self._inputs = initial_inputs
+        self.inputs = iter(self._inputs)
         self.outputs = []
 
     def run(self):
-        while(self.instruction() != self.EXIT_OPCODE):
-            self.execute(self.instruction())
-        return self.outputs
+        while not self.finished():
+            res = self.execute(self.instruction())
+
+            if res is not None:
+                yield res
+
+        yield self.outputs[-1]
+
+    def add_input(self, value):
+        self._inputs.append(value)
+
+    def finished(self):
+        return self.instruction() == self.EXIT_OPCODE
 
     def execute(self, instruction):
         if instruction == 1:
             self._op_add()
-        elif instruction == 2:
+        if instruction == 2:
             self._op_multiply()
-        elif instruction == 3:
+        if instruction == 3:
             self._op_input()
-        elif instruction == 4:
-            self._op_output()
-        elif instruction == 5:
+        if instruction == 4:
+            return self._op_output()
+        if instruction == 5:
             self._op_conditional_jump(lambda x: x)
-        elif instruction == 6:
+        if instruction == 6:
             self._op_conditional_jump(lambda x: not x)
-        elif instruction == 7:
+        if instruction == 7:
             self._op_compare(lambda a, b: a < b)
-        elif instruction == 8:
+        if instruction == 8:
             self._op_compare(lambda a, b: a == b)
 
     def instruction(self):
@@ -72,8 +85,9 @@ class IntCodeVM:
 
     def _op_output(self):
         value, = self.parameters(1)
-        self.outputs.append(value)
         self.index += 2
+        self.outputs.append(value)
+        return value
 
     def _op_conditional_jump(self, condition):
         value, position = self.parameters(2)
@@ -100,24 +114,50 @@ class IntCodeVMsChain:
     def run(self):
         last_output = [self.INITIAL_INPUT]
         for phase in self.phases:
-            last_output = IntCodeVM(self.program, [phase] + last_output).run()
+            last_output = list(IntCodeVM(self.program, [phase] + last_output).run())
+        return last_output[-1]
+
+class IntCodeVMsChainWithFeedback:
+    INITIAL_INPUT = 0
+
+    def __init__(self, program, phases):
+        self.program = program
+        self.phases = phases
+
+    def run(self):
+        last_output = [self.INITIAL_INPUT]
+        machines = [ IntCodeVM(self.program, [phase]) for phase in self.phases ]
+
+        machines[0].add_input(0)
+        idx = 0
+        while True:
+            machine = machines[idx % len(machines)]
+            output = next(machine.run())
+            is_last = (idx % len(machines)) == (len(machines) - 1)
+            if is_last and machine.finished():
+                return output
+            machines[(idx + 1) % len(machines)].add_input(output)
+            idx += 1
+
         return last_output
 
 
 def find_maximum_signal(program):
     best = 0
-    for a in range(5):
-        for b in range(5):
-            for c in range(5):
-                for d in range(5):
-                    for e in range(5):
-                        phases = (a, b, c, d, e)
-                        if len(set(phases)) < 5:
-                            continue
 
-                        res = IntCodeVMsChain(program, phases).run()
-                        if int(res[0]) > best:
-                            best = res[0]
+    for phases in permutations(range(5), 5):
+        res = IntCodeVMsChain(program, phases).run()
+        if int(res) > best:
+            best = res
+    return best
+
+def find_maximum_signal_with_feedback_loop(program):
+    best = 0
+
+    for phases in permutations(range(5, 10), 5):
+        res = IntCodeVMsChainWithFeedback(program, phases).run()
+        if int(res) > best:
+            best = res
     return best
 
 
@@ -126,4 +166,5 @@ def read_input():
 
 if __name__ == '__main__':
     print("Highest signal that can be sent to the thrusters: ", find_maximum_signal(read_input()))
+    print("Highest signal that can be sent to the thrusters using feedback loop: ", find_maximum_signal_with_feedback_loop(read_input()))
     
