@@ -13,13 +13,6 @@ class TestMonitoringStation(unittest.TestCase):
 
         self.assertEqual(asteroids_from(asteroids_map), [(2,0), (0, 1), (2,1)])
 
-    def test_aligned(self):
-        self.assertEqual(aligned((1, 2), (2,2)), False)
-        self.assertEqual(aligned((1, 1), (2,2)), True)
-        self.assertEqual(aligned((1, 2), (2,4)), True)
-        self.assertEqual(aligned((-1, -1), (-2,-2)), True)
-        self.assertEqual(aligned((-1, -1), (2,2)), False)
-
     def test_number_of_asteroids_seen(self):
         asteroids_map = textwrap.dedent("""
             ......#.#.
