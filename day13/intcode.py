@@ -3,11 +3,11 @@ class IntCodeVM:
     EXIT_OPCODE = 99
     MAX_PARAMS_COUNT = 3
 
-    def __init__(self, program, initial_inputs=None):
+    def __init__(self, program, initial_input=None):
         self.program = self._right_pad(program[::])
         self.index = 0
-        self._inputs = initial_inputs or []
-        self.inputs = iter(self._inputs)
+        self.input = initial_input
+        
         self.outputs = []
         self.relative_base = 0
 
@@ -20,8 +20,8 @@ class IntCodeVM:
 
         yield self.outputs[-1]
 
-    def add_input(self, value):
-        self._inputs.append(value)
+    def set_input(self, value):
+        self.input = value
 
     def finished(self):
         return self.instruction() == self.EXIT_OPCODE
@@ -98,7 +98,7 @@ class IntCodeVM:
 
     def _op_input(self):
         result_idx = self.index_for_write(1)
-        given_input = int(input('> ')) if self.inputs is None else next(self.inputs)
+        given_input = self.input
         self.program[result_idx] = given_input
         self.index += 2
 
