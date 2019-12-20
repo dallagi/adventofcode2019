@@ -1,8 +1,9 @@
 import copy
-import itertools
+import math
 
 from dataclasses import dataclass, field
-from itertools import combinations
+from functools import reduce
+from itertools import combinations, count
 from typing import List
 
 @dataclass
@@ -32,21 +33,45 @@ class Moons:
         self.moons = moons
         self.initial_moons = tuple(copy.deepcopy(moons))
 
+    def __str__(self):
+        return 'Moons\n\t' + '\n\t'.join(str(moon) for moon in self.moons)
+
     def run_simulation(self, *, steps: int):
         for _ in range(steps):
-            self._apply_gravity()
-            self._apply_velocity()
+            self.run_step()
+
+    def run_step(self):
+        self._apply_gravity()
+        self._apply_velocity()
 
     def total_energy(self):
         return sum(moon.total_energy() for moon in self.moons)
 
     def steps_until_repetition(self):
-        for i in itertools.count():
-            print(f'\r{i+1}', end='')
-            self.run_simulation(steps=1)
-            if tuple(self.moons) == tuple(self.initial_moons):
-                print('\r{i+1}')
-                return i+1
+        return self._least_common_multiple(*self.steps_until_first_repetition_by_axis())
+
+    def steps_until_first_repetition_by_axis(self):
+        res = [0, 0, 0]
+
+        for step in count():
+            for axis_idx, (current_axis_state, initial_axis_state) in enumerate(zip(self.axes_state(), self.initial_axes_state())):
+                if current_axis_state == initial_axis_state:
+                    res[axis_idx] = res[axis_idx] or step
+
+            if 0 not in res:
+                return res
+            
+            self.run_step()
+
+    def axes_state(self, moons=None):
+        if moons is None:
+            moons = self.moons
+        positions = zip(*[moon.position for moon in moons])
+        velocities = zip(*[moon.velocity for moon in moons])
+        return zip(positions, velocities)
+
+    def initial_axes_state(self):
+        return self.axes_state(self.initial_moons)
 
     def _apply_gravity(self):
         for moons in combinations(self.moons, 2):
@@ -70,6 +95,13 @@ class Moons:
         for moon in self.moons:
             moon.apply_velocity()
 
+    def _least_common_multiple_for_pair(self, a, b):
+        return int(abs(a*b) / math.gcd(int(a), int(b)))
+
+    def _least_common_multiple(self, *numbers):
+        return reduce(self._least_common_multiple_for_pair, numbers)
+
+
 if __name__ == '__main__':
     moons = Moons(
                 Moon([-4, 3, 15]),
@@ -79,4 +111,12 @@ if __name__ == '__main__':
             )
     moons.run_simulation(steps=1000)
     print('Total energy: ', moons.total_energy())
+
+    moons = Moons(
+                Moon([-4, 3, 15]),
+                Moon([-11, -10, 13]),
+                Moon([2, 2, 18]),
+                Moon([7, -1, 0]),
+            )
+    print('Steps before repetition: ', moons.steps_until_repetition())
 

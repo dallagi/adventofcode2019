@@ -81,6 +81,15 @@ class TestMoons(unittest.TestCase):
 
         self.assertEqual(moons.total_energy(), 179)
 
+    def test_steps_until_first_repetition_by_axis(self):
+        moon1 = Moon([-1, 0, 2])
+        moon2 = Moon([2, -10, -7])
+        moon3 = Moon([4, -8, 8])
+        moon4 = Moon([3, 5, -1])
+
+        moons = Moons(moon1, moon2, moon3, moon4)
+        self.assertEqual(moons.steps_until_first_repetition_by_axis(), [18, 28, 44])
+
     def test_steps_until_repetition(self):
         moon1 = Moon([-1, 0, 2])
         moon2 = Moon([2, -10, -7])
@@ -88,7 +97,7 @@ class TestMoons(unittest.TestCase):
         moon4 = Moon([3, 5, -1])
 
         moons = Moons(moon1, moon2, moon3, moon4)
-        self.assertEquals(moons.steps_until_repetition(), 2772)
+        self.assertEqual(moons.steps_until_repetition(), 2772)
 
     def test_steps_until_repetition_more_complex(self):
         moons = Moons(
